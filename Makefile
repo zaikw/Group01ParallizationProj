@@ -6,6 +6,9 @@ DEBUG:=
 
 CFLAGS=-pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
 LDFLAGS=-pthread -lrt
+SRC=./src
+BUILD=./build
+
 
 CC=gcc
 
@@ -17,17 +20,15 @@ else
 	LDFLAGS += -O2
 endif
 
-all: bst_test
+all: parser
 
-bst_test: bst_test.o bst.o timing.o hasp.o
+
+parser: $(SRC)/tokenizer.l $(SRC)/parser.y
+	flex $(SRC)/tokenizer.l -o $(SRC)/lex.yy.c
+	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c
 
 clean:
 	$(RM) *.o *.d *~
-
-distclean: clean
-	$(RM) bst_test
-
-.PHONY: all clean distclean
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $*.c -o $*.o
@@ -38,4 +39,4 @@ distclean: clean
 	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
 	@$(RM) $*.d.tmp
 
--include $(wildcard *.d)
+-include $(wildcard *.d)		
