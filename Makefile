@@ -24,8 +24,8 @@ all: parser
 
 
 parser: $(SRC)/tokenizer.l $(SRC)/parser.y
-	flex $(SRC)/tokenizer.l -o $(SRC)/lex.yy.c
-	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c
+	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c		
+	flex -o $(SRC)/lex.yy.c $(SRC)/tokenizer.l 	
 
 clean:
 	$(RM) *.o *.d *~
