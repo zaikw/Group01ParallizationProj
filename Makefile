@@ -2,7 +2,7 @@
 # Author: Nikos Nikoleris <nikos.nikoleris@it.uu.se>
 # Modified by: Jonatan Waern
 
-DEBUG ?=
+DEBUG ?= y
 
 CFLAGS=-pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
 LDFLAGS=-pthread -lrt
@@ -22,6 +22,8 @@ endif
 
 all: parser
 
+debug:	parser.o
+	gdb $(BUILD)/parser.o 
 
 parser.o: parser
 	$(CC) $(CFLAGS) $(SRC)/parser.tab.c $(SRC)/lex.yy.c -o $(BUILD)/parser.o
@@ -31,7 +33,7 @@ parser: $(SRC)/tokenizer.l $(SRC)/parser.y
 	flex -o $(SRC)/lex.yy.c $(SRC)/tokenizer.l 	
 
 clean:
-	$(RM) *.o *.d *~
+	$(RM) $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~
 	$(RM) $(SRC)/parser.tab.h $(SRC)/parser.tab.c $(SRC)/lex.yy.c
 
 %.o: $(SRC)/%.c

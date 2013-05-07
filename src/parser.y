@@ -1,6 +1,7 @@
 %code requires {
 #include "structures.h"
 #include <stdio.h>
+#include <stdint.h>
 
 extern char* strdup(const char*);
 }
@@ -10,7 +11,7 @@ extern char* strdup(const char*);
 #include <assert.h>
 #include "structures.h"
 
-TreeNode* lastTree = NULL;
+SymbolIdent* it = NULL;
 
 void yyerror(const char *str)
 {
@@ -24,10 +25,11 @@ int yywrap()
 
 void valPrint(Val* curr) {
   if (curr->next == curr)
-    printf("%d",(int)curr->val);
+    printf("%p",(int)curr->val);
   else {
     printf("[");
-    valPrint(curr->val);
+    if (curr->val)
+       valPrint(curr->val);
     if (curr->next) {
       printf(",");
       valPrint(curr->next);
@@ -42,19 +44,19 @@ void walkPrint(TreeNode* curr) {
   if (curr->value)
     valPrint(curr->value);
   PointerListNode* temp = curr->argList;
-  do {
+  while (temp) {
     if (temp->target)
       walkPrint(temp->target);
     else
       assert(0);
     temp = temp->next;
-  } while (temp);
+  }
 }
 
 main()
 {
 	if (!yyparse()) {
-	   walkPrint(lastTree);
+	   walkPrint(it->parseTree);
 	}
 }
 %}
@@ -66,7 +68,7 @@ main()
        SymbolIdent* SIval;
        PointerListNode* PLNval;
        Val* Vval;
-       int i;
+       uintptr_t i;
 }      
 %type <TNval> expression 
 %type <SIval> function constant declaration
@@ -79,8 +81,8 @@ main()
 %token FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON PLUS MINUS MULT DIV EQUAL
 %%
 
-declaration: function {lastTree=$1; printf("Made function\n");}
-	   | constant {lastTree=$1; printf("Made value\n");}
+declaration: function {it=$1; printf("Made function\n");}
+	   | constant {it=$1; printf("Made value\n");}
 	   ;
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
@@ -164,7 +166,6 @@ functionname:  PLUS		{$$=strdup("plus");}
 
 value: list 		{$$=$1;}
      | NUMBER 		{Val* returnPointer = malloc(sizeof(Val));
-       			 printf("%d",sizeof(Val*));
        	       		 returnPointer->val = (Val*)$1;
 			 returnPointer->next = returnPointer;
 	       		 $$=returnPointer;
