@@ -2,7 +2,7 @@
 # Author: Nikos Nikoleris <nikos.nikoleris@it.uu.se>
 # Modified by: Jonatan Waern
 
-DEBUG:=
+DEBUG ?=
 
 CFLAGS=-pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
 LDFLAGS=-pthread -lrt
@@ -23,20 +23,21 @@ endif
 all: parser
 
 
+parser.o: parser
+	$(CC) $(CFLAGS) $(SRC)/parser.tab.c $(SRC)/lex.yy.c -o $(BUILD)/parser.o
+
 parser: $(SRC)/tokenizer.l $(SRC)/parser.y
 	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c		
 	flex -o $(SRC)/lex.yy.c $(SRC)/tokenizer.l 	
 
 clean:
 	$(RM) *.o *.d *~
+	$(RM) $(SRC)/parser.tab.h $(SRC)/parser.tab.c $(SRC)/lex.yy.c
 
-%.o: %.c
-	$(CC) -c $(CFLAGS) $*.c -o $*.o
-	$(CC) -MM $(CFLAGS) $*.c > $*.d
-	@mv -f $*.d $*.d.tmp
-	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
-	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
-	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
-	@$(RM) $*.d.tmp
+%.o: $(SRC)/%.c
+	$(CC) -c $(CFLAGS) $(SRC)/$*.c -o $(BUILD)/$*.o
+
+run: interpreter.o
+	interpreter.o
 
 -include $(wildcard *.d)		

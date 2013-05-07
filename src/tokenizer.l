@@ -9,7 +9,7 @@ val 			return VALUE;
 \(			return LPARENS;
 \)			return RPARENS;
 ,
-\;			return COLON;
+\;			return EOF;
 [0-9]+			yylval.i=atoi(yytext); return NUMBER;
 [a-zA-Z][0-9a-zA-Z]* 	yylval.cval=yytext; return NAME;
 \+			return PLUS;

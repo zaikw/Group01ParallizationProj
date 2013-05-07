@@ -1,6 +1,14 @@
-%{
+%code requires {
 #include "structures.h"
 #include <stdio.h>
+
+extern char* strdup(const char*);
+}
+
+%{
+#include <stdio.h>
+#include <assert.h>
+#include "structures.h"
 
 TreeNode* lastTree = NULL;
 
@@ -14,7 +22,7 @@ int yywrap()
         return 1;
 } 
 
-valPrint(Val* curr) {
+void valPrint(Val* curr) {
   if (curr->next == curr)
     printf("%d",(int)curr->val);
   else {
@@ -28,7 +36,7 @@ valPrint(Val* curr) {
   }
 }
 
-walkPrint(TreeNode* curr) {
+void walkPrint(TreeNode* curr) {
   if (curr->name)
     printf("Found %s: ",curr->name);
   if (curr->value)
@@ -71,11 +79,11 @@ main()
 %token FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON PLUS MINUS MULT DIV EQUAL
 %%
 
-declaration: function {lastTree=$1;}
-	   | constant {lastTree=$1;}
+declaration: function {lastTree=$1; printf("Made function\n");}
+	   | constant {lastTree=$1; printf("Made value\n");}
 	   ;
 
-function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression COLON
+function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {
 	    SymbolIdent* returnPointer = malloc(sizeof(SymbolIdent));
 	    returnPointer->name = strdup($2);
@@ -85,7 +93,7 @@ function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression COLON
 	  }
 	  ;
 
-constant: VALUE NAME EQUAL expression COLON
+constant: VALUE NAME EQUAL expression
 	  {
 	    SymbolIdent* returnPointer = malloc(sizeof(SymbolIdent));
 	    returnPointer->name = strdup($2);
@@ -122,17 +130,19 @@ expression: functionname LPARENS expressionlist RPARENS
 	    {
 		TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = $3;
-		returnPointer->name = $1;
+		returnPointer->name = strdup($1);
 		returnPointer->value = NULL;
 		$$ = returnPointer;
+		printf("Made expression function call\n");
 	    }
 	  | NAME
 	    {		
 	    	TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = NULL;
-		returnPointer->name = $1;
+		returnPointer->name = strdup($1);
 		returnPointer->value = NULL;
 		$$ = returnPointer;
+		printf("Made expression symbol reference\n");
 	    }
           | value
 	    {
@@ -141,6 +151,7 @@ expression: functionname LPARENS expressionlist RPARENS
 		returnPointer->name = NULL;
 		returnPointer->value = $1;
 		$$ = returnPointer;
+		printf("Made expression constant value\n");
 	    }
 	    ;
 
@@ -153,12 +164,15 @@ functionname:  PLUS		{$$=strdup("plus");}
 
 value: list 		{$$=$1;}
      | NUMBER 		{Val* returnPointer = malloc(sizeof(Val));
+       			 printf("%d",sizeof(Val*));
        	       		 returnPointer->val = (Val*)$1;
 			 returnPointer->next = returnPointer;
-	       		 $$=returnPointer;}
+	       		 $$=returnPointer;
+			 printf("Made number\n");}
      ;
 
-list: LBRACKET nodes RBRACKET {$$=$2;}
+list: LBRACKET nodes RBRACKET {$$=$2;
+			       printf("Made list\n");}
     ;
 
 
