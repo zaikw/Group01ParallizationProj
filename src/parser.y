@@ -8,14 +8,14 @@ extern char* strdup(const char*);
 
 %{
 #include <stdio.h>
-#include <assert.h>
 #include "structures.h"
+#include "parser.h"
 
 SymbolIdent* it = NULL;
 
 void yyerror(const char *str)
 {
-        fprintf(stderr,"error: %s\n",str);
+  //fprintf(stderr,"error: %s\n",str);
 }
  
 int yywrap()
@@ -23,42 +23,14 @@ int yywrap()
         return 1;
 } 
 
-void valPrint(Val* curr) {
-  if (curr->next == curr)
-    printf("%p",(int)curr->val);
-  else {
-    printf("[");
-    if (curr->val)
-       valPrint(curr->val);
-    if (curr->next) {
-      printf(",");
-      valPrint(curr->next);
-    }
-    printf("]");
-  }
+SymbolIdent* parse(int inStream) {
+  //Setup insteam if neccecary
+  if (!yyparse())
+    return it;
+  else //Parsing failed for whatever reason
+    return NULL;
 }
 
-void walkPrint(TreeNode* curr) {
-  if (curr->name)
-    printf("Found %s: ",curr->name);
-  if (curr->value)
-    valPrint(curr->value);
-  PointerListNode* temp = curr->argList;
-  while (temp) {
-    if (temp->target)
-      walkPrint(temp->target);
-    else
-      assert(0);
-    temp = temp->next;
-  }
-}
-
-main()
-{
-	if (!yyparse()) {
-	   walkPrint(it->parseTree);
-	}
-}
 %}
 
 %union {
@@ -78,12 +50,14 @@ main()
 %type <PLNval> expressionlist
 %token <cval> NAME
 %token <i> NUMBER
-%token FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON PLUS MINUS MULT DIV EQUAL
+%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON PLUS MINUS MULT DIV EQUAL
 %%
 
-declaration: function {it=$1; printf("Made function\n");}
-	   | constant {it=$1; printf("Made value\n");}
-	   ;
+declaration: function COLON {it=$1; printf("Made function\n"); YYACCEPT;}
+	     | constant COLON {it=$1; printf("Made value\n"); YYACCEPT;}
+             | error COLON {printf("Syntax error\n"); YYABORT;}
+	     | COLON {YYABORT;}
+	     ;
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {

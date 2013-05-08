@@ -22,11 +22,14 @@ endif
 
 all: parser
 
-debug:	parser.o
-	gdb $(BUILD)/parser.o 
+run: 	interpreter.o
+	$(BUILD)/interpreter.o
 
-parser.o: parser
-	$(CC) $(CFLAGS) $(SRC)/parser.tab.c $(SRC)/lex.yy.c -o $(BUILD)/parser.o
+debug:	interpreter.o
+	gdb $(BUILD)/interpreter.o 
+
+interpreter.o: $(SRC)/interpreter.c $(SRC)/parser.h parser
+	$(CC) $(CFLAGS) $(SRC)/interpreter.c $(SRC)/parser.tab.c $(SRC)/lex.yy.c         -o $(BUILD)/interpreter.o
 
 parser: $(SRC)/tokenizer.l $(SRC)/parser.y
 	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c		
