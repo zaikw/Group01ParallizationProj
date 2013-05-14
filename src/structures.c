@@ -41,7 +41,7 @@ char* getArgName (SymbolIdent* node, int ArgIndex) {
 
 Val createVal(ValueType type, intptr_t value) {
   Val returnVal;
-  returnVal.value.intval = value;
+  returnVal.value.intval = value; //dubbelkod?
   switch (type) {
   case ValueType_INT:
     returnVal.type = 0;
