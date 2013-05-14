@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include "structures.h"
 #include "parser.h"
+#include "hashmap.h"
 
+map_t symbol_map;
 
 void valPrint(Val curr) {
   switch (getType(curr)) {
@@ -72,25 +74,50 @@ Val evalCons(Val arg1, Val arg2) {
   return createVal(ValueType_LIST, (intptr_t) newNode);
 }
 
-Val seqEval(TreeNode* curr) {
+Val seqEval(TreeNode* curr, ArgName args[]) {
   switch (getType(curr->value)) {
+  case ValueType_CONSTANT:
   case ValueType_FUNCTION:
     if (!strcmp(getCharVal(curr->value),"plus")) {
-      return evalPlus(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));
+      return evalPlus(seqEval(getArgNode(curr,0), args),
+		      seqEval(getArgNode(curr,1), args));
     } else if (!strcmp(getCharVal(curr->value),"minus")) {
-      return evalMinus(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));
+      return evalMinus(seqEval(getArgNode(curr,0), args),
+		      seqEval(getArgNode(curr,1), args));
     } else if (!strcmp(getCharVal(curr->value),"mult")) {
-      return evalMult(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));
+      return evalMult(seqEval(getArgNode(curr,0), args),
+		      seqEval(getArgNode(curr,1), args));
     } else if (!strcmp(getCharVal(curr->value),"div")) {
-      return evalDiv(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));
+      return evalDiv(seqEval(getArgNode(curr,0), args),
+		     seqEval(getArgNode(curr,1), args));
     } else if (!strcmp(getCharVal(curr->value),"equals")) {
-      return evalEqual(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));
+      return evalEqual(seqEval(getArgNode(curr,0), args),
+		       seqEval(getArgNode(curr,1), args));
     } else if (!strcmp(getCharVal(curr->value),"hd")) {
-      return evalHead(seqEval(getArgNode(curr,0)));
+      return evalHead(seqEval(getArgNode(curr,0), args));
     } else if (!strcmp(getCharVal(curr->value),"tl")) {
-      return evalTail(seqEval(getArgNode(curr,0)));
+      return evalTail(seqEval(getArgNode(curr,0), args));
     } else if (!strcmp(getCharVal(curr->value),"cons")) {
-      return evalCons(seqEval(getArgNode(curr,0)),seqEval(getArgNode(curr,1)));      }
+      return evalCons(seqEval(getArgNode(curr,0), args),
+		      seqEval(getArgNode(curr,1), args));
+    } else {
+      SymbolIdent* temp;
+      hashmap_get(symbol_map, getCharVal(curr->value),&temp);
+      int i = 0;
+      NameListNode* count_temp = temp->argNames;
+      while (count_temp) {
+	i++;
+	count_temp = count_temp->next;
+      }
+      count_temp = temp->argNames;
+      ArgName arguments[i];
+      for (int j = 0; j < i; j++) {
+	arguments[j].value = seqEval(getArgNode(curr,j), args);
+	arguments[j].ident = count_temp->name;
+	count_temp = count_temp->next;
+      }
+      return seqEval(temp->parseTree,args);
+    }
     break;
   case ValueType_INT:
   case ValueType_LIST:
@@ -104,7 +131,7 @@ int main (int argv, char** argc) {
   while (1) {
     it = parse(0);
     if (it) {
-      Val calced = seqEval(it->parseTree);
+      Val calced = seqEval(it->parseTree,NULL);
       printf("it = ");
       valPrint(calced);
       printf("\n");

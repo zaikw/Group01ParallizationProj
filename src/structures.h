@@ -21,6 +21,11 @@ typedef struct {
   char type;
 } Val;
 
+typedef struct {
+  Val value;
+  char* ident;
+} ArgName;
+
 typedef struct ValList {
   Val value;
   struct ValList* next;
