@@ -39,12 +39,14 @@ SymbolIdent* parse(int inStream) {
        NameListNode* NLNval;
        SymbolIdent* SIval;
        PointerListNode* PLNval;
-       Val* Vval;
-       uintptr_t i;
+       ValList* VLval;
+       Val Vval;
+       intptr_t i;
 }      
 %type <TNval> expression 
-%type <SIval> function constant declaration
-%type <Vval> value list nodes
+%type <SIval> function constant base_expr
+%type <Vval> value
+%type <VLval> nodes list
 %type <cval> functionname argument
 %type <NLNval> arguments
 %type <PLNval> expressionlist
@@ -55,9 +57,19 @@ SymbolIdent* parse(int inStream) {
 
 declaration: function COLON {it=$1; printf("Made function\n"); YYACCEPT;}
 	     | constant COLON {it=$1; printf("Made value\n"); YYACCEPT;}
+	     | base_expr {it=$1; printf("Made base expression\n"); YYACCEPT;}
              | error COLON {printf("Syntax error\n"); YYABORT;}
 	     | COLON {YYABORT;}
 	     ;
+
+base_expr: expression
+	   {
+	    SymbolIdent* returnPointer = malloc(sizeof(SymbolIdent));
+	    returnPointer->name = NULL;
+	    returnPointer->argNames = NULL;
+	    returnPointer->parseTree = $1;
+	    $$ = returnPointer;
+	   }	    
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {
@@ -106,8 +118,8 @@ expression: functionname LPARENS expressionlist RPARENS
 	    {
 		TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = $3;
-		returnPointer->name = strdup($1);
-		returnPointer->value = NULL;
+		returnPointer->value = 
+		createVal(ValueType_FUNCTION, (intptr_t) $1);
 		$$ = returnPointer;
 		printf("Made expression function call\n");
 	    }
@@ -115,8 +127,8 @@ expression: functionname LPARENS expressionlist RPARENS
 	    {		
 	    	TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = NULL;
-		returnPointer->name = strdup($1);
-		returnPointer->value = NULL;
+		returnPointer->value = 
+		createVal(ValueType_CONSTANT, (intptr_t) $1);
 		$$ = returnPointer;
 		printf("Made expression symbol reference\n");
 	    }
@@ -124,7 +136,6 @@ expression: functionname LPARENS expressionlist RPARENS
 	    {
 		TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = NULL;
-		returnPointer->name = NULL;
 		returnPointer->value = $1;
 		$$ = returnPointer;
 		printf("Made expression constant value\n");
@@ -135,28 +146,23 @@ functionname:  PLUS		{$$=strdup("plus");}
 	     | MINUS		{$$=strdup("minus");}
 	     | MULT		{$$=strdup("mult");}
 	     | DIV		{$$=strdup("div");}
+	     | EQUAL		{$$=strdup("equals");}
 	     | NAME		{$$=strdup($1);}
 	     ;
 
-value: list 		{$$=$1;}
-     | NUMBER 		{Val* returnPointer = malloc(sizeof(Val));
-       	       		 returnPointer->val = (Val*)$1;
-			 returnPointer->next = returnPointer;
-	       		 $$=returnPointer;
+value: list 		{$$=createVal(ValueType_LIST,(intptr_t) $1);
+       			 printf("Made list\n");}
+     | NUMBER 		{$$=createVal(ValueType_INT,(intptr_t) $1);
 			 printf("Made number\n");}
      ;
 
-list: LBRACKET nodes RBRACKET {$$=$2;
-			       printf("Made list\n");}
+list: LBRACKET nodes RBRACKET {$$=$2;}
     ;
 
 
-nodes:	       	     	{Val* returnVal = malloc(sizeof(Val));
-			 returnVal->val=0;
-			 returnVal->next=0;
-			 $$=returnVal;}
-     | value nodes	{Val* returnVal = malloc(sizeof(Val));
-			 returnVal->val=$1;
+nodes:	       	     	{$$=NULL;}
+     | value nodes	{ValList* returnVal = malloc(sizeof(ValList));
+			 returnVal->value=$1;
 			 returnVal->next=$2;
 			 $$=returnVal;}
      ;

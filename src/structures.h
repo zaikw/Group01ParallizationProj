@@ -1,17 +1,34 @@
 #ifndef STRUCTURE_HEADER
 #define STRUCTURE_HEADER
-
+#include <stdint.h>
 struct PointerListNode;
 
-typedef struct Val {
-  struct Val* val;
-  struct Val* next;
+typedef enum ValueType {
+  ValueType_INT, 
+  ValueType_LIST, 
+  ValueType_CONSTANT, 
+  ValueType_FUNCTION
+} ValueType;
+
+typedef struct ValList ValList;
+
+typedef struct {
+  union { //Last two bits are type identifier
+    intptr_t intval;
+    struct ValList* listStart;
+    char* identifier;
+  } value;
+  char type;
 } Val;
+
+typedef struct ValList {
+  Val value;
+  struct ValList* next;
+} ValList;
 
 typedef struct TreeNode {
   struct PointerListNode* argList;
-  char* name;
-  struct Val* value;
+  Val value;
 } TreeNode;
 
 typedef struct NameListNode {
@@ -29,5 +46,13 @@ typedef struct PointerListNode {
   struct TreeNode* target;
   struct PointerListNode* next;
 } PointerListNode;
+
+ValueType getType (Val v);
+TreeNode* getArgNode (TreeNode* t, int argnum);
+char* getArgName (SymbolIdent* t, int argnum);
+Val createVal(ValueType type, intptr_t value);
+intptr_t getIntVal (Val v);
+char* getCharVal(Val v);
+ValList* getListVal (Val v);
 
 #endif

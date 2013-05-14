@@ -2,9 +2,9 @@
 # Author: Nikos Nikoleris <nikos.nikoleris@it.uu.se>
 # Modified by: Jonatan Waern
 
-DEBUG ?= y
+DEBUG ?=y
 
-CFLAGS=-pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
+CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600
 LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
@@ -20,29 +20,23 @@ else
 	LDFLAGS += -O2
 endif
 
-all: parser
+all: 	interpreter
 
-run: 	interpreter.o
-	$(BUILD)/interpreter.o
+run: 	all
+	$(BUILD)/interpreter
 
-debug:	interpreter.o
-	gdb $(BUILD)/interpreter.o 
+debug:	all
+	gdb $(BUILD)/interpreter
 
-interpreter.o: $(SRC)/interpreter.c $(SRC)/parser.h parser
-	$(CC) $(CFLAGS) $(SRC)/interpreter.c $(SRC)/parser.tab.c $(SRC)/lex.yy.c         -o $(BUILD)/interpreter.o
+interpreter: parser $(SRC)/interpreter.c
+	$(CC) $(CFLAGS) $(SRC)/interpreter.c $(SRC)/parser.tab.c $(SRC)/structures.c $(SRC)/lex.yy.c -o $(BUILD)/interpreter
 
-parser: $(SRC)/tokenizer.l $(SRC)/parser.y
+parser: $(SRC)/tokenizer.l $(SRC)/parser.y $(SRC)/structures.h $(SRC)/structures.c
 	bison $(SRC)/parser.y --defines=$(SRC)/parser.tab.h -o $(SRC)/parser.tab.c		
 	flex -o $(SRC)/lex.yy.c $(SRC)/tokenizer.l 	
 
 clean:
 	$(RM) $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~
 	$(RM) $(SRC)/parser.tab.h $(SRC)/parser.tab.c $(SRC)/lex.yy.c
-
-%.o: $(SRC)/%.c
-	$(CC) -c $(CFLAGS) $(SRC)/$*.c -o $(BUILD)/$*.o
-
-run: interpreter.o
-	interpreter.o
 
 -include $(wildcard *.d)		
