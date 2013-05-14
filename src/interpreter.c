@@ -5,7 +5,7 @@
 #include "parser.h"
 #include "hashmap.h"
 
-map_t symbol_map;
+map_t symbolmap;
 
 void valPrint(Val curr) {
   switch (getType(curr)) {
@@ -48,7 +48,7 @@ Val evalDiv(Val arg1, Val arg2) {
 }
 
 Val evalMult(Val arg1, Val arg2) {
-  assert(getType(arg1) == getType(arg2) == ValueType_INT);
+  //assert(getType(arg1) == getType(arg2) == ValueType_INT);
   return createVal(ValueType_INT, getIntVal(arg1)*getIntVal(arg2));
 }
 
@@ -62,12 +62,12 @@ Val evalHead(Val arg) {
 }
 
 Val evalTail(Val arg) {
-  assert(getType(arg) == ValueType_LIST);
+  //assert(getType(arg) == ValueType_LIST);
   return createVal(ValueType_LIST, (intptr_t) getListVal(arg)->next);
 }
 
 Val evalCons(Val arg1, Val arg2) {
-  assert(getType(arg2) == ValueType_LIST);
+  //assert(getType(arg2) == ValueType_LIST);
   ValList* newNode = malloc(sizeof(ValList));
   newNode->value = arg1;
   newNode->next = getListVal(arg2);
@@ -125,7 +125,7 @@ Val seqEval(TreeNode* curr, ArgName args[]) {
   }
 }
 
-int main (int argv, char** argc) {
+int old_main (int argv, char** argc) {
   SymbolIdent* it = NULL;
   //Possible initial read from file here, otherwise:
   while (1) {
@@ -137,4 +137,32 @@ int main (int argv, char** argc) {
       printf("\n");
     }
   }
+}
+
+int main(int argv, char** argc){
+  symbolmap = newMap();
+  SymbolIdent* it = NULL;
+  while(1){
+    it = parse(0);
+    if(it){
+      if(it->name != NULL && it->argNames != NULL){
+	if(hashmap_get(m, it->name, NULL) == MAP_OK){
+	  fprintf("redefinition is not alowed");
+	}
+	else {
+	  hashmap_put(m, it->name, it); 
+	}
+      }
+      else{
+	if(hashmap_get(m, it->name, NULL) == MAP_OK){
+	  fprintf("redefinition is not alowed");
+	}
+	else {
+	  it->parseTree->value = seqEval(it->parseTree);
+	  hashmap_put(m, it->name, it); 
+	}
+      }
+    }
+  }
+  return 0;
 }
