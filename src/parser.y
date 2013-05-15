@@ -54,7 +54,7 @@ SymbolIdent* parse(int inStream) {
 %type <cval> infix
 %token <cval> NAME PLUS MINUS MULT DIV
 %token <i> NUMBER EQUAL
-%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE
+%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA
 %left PLUS MINUS
 %left MULT DIV
 %left EQUAL
@@ -64,15 +64,18 @@ declaration: function COLON
 	     {
 	       it=$1; 
 	       //printf("Made function\n"); 
-	       YYACCEPT;}
+	       YYACCEPT;
+	     }
 	     | constant COLON {
 	       it=$1; 
 	       //printf("Made value\n"); 
-	       YYACCEPT;}
+	       YYACCEPT;
+	     }
 	     | base_expr COLON {
 	       it=$1; 
 	       //printf("Made base expression\n"); 
-	       YYACCEPT;}
+	       YYACCEPT;
+	     }
              | QUIT {it=(SymbolIdent*)(intptr_t)5; YYACCEPT;}
 	     | error COLON {printf("Syntax error\n"); YYABORT;}
 	     | COLON {YYABORT;}
@@ -110,11 +113,18 @@ base_expr: expression
 	   }
 
 arguments:		     {$$ = NULL;}
-	 | argument arguments
+	 | argument
 	 {
 	    NameListNode* returnPointer = malloc(sizeof(NameListNode));
 	    returnPointer->name = $1;
-	    returnPointer->next = $2;
+	    returnPointer->next = NULL;
+	    $$ = returnPointer;
+	 }
+	 | argument COMMA arguments
+	 {
+	    NameListNode* returnPointer = malloc(sizeof(NameListNode));
+	    returnPointer->name = $1;
+	    returnPointer->next = $3;
 	    $$ = returnPointer;
 	 }
 	 ;
@@ -123,14 +133,21 @@ argument: NAME		{$$ = strdup($1);}
 	 ;
 
 expressionlist:		{$$=NULL;}
-	      | expression expressionlist
-	    {
+	      | expression
+	      {
 		PointerListNode* returnPointer = malloc(sizeof(PointerListNode));
-		returnPointer->next = $2;
+		returnPointer->next = NULL;
 		returnPointer->target = $1;
 		$$ = returnPointer;
-	    }	 
-	    ;
+	      }
+	      | expression COMMA expressionlist
+	      {
+		PointerListNode* returnPointer = malloc(sizeof(PointerListNode));
+		returnPointer->next = $3;
+		returnPointer->target = $1;
+		$$ = returnPointer;
+	      }		 
+	      ;
 
 expression: expression infix term
 	    {
@@ -145,7 +162,7 @@ expression: expression infix term
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) $2);
 		$$ = returnPointer;
-		//printf("Made expression infix function call\n");
+		//printf("Made expression infix function call to %s\n", $2);
 	    }
 	  | IF expression THEN expression ELSE expression
 	    {
@@ -165,7 +182,12 @@ expression: expression infix term
 		$$ = returnPointer;
 		//printf("Made if-then-else expression\n");
 	    }
-	  | NAME LPARENS expressionlist RPARENS 
+	  | term {$$ = $1;}
+
+
+
+
+term:	    NAME LPARENS expressionlist RPARENS 
 	    {
 		TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = $3;
@@ -174,12 +196,7 @@ expression: expression infix term
 		$$ = returnPointer;
 		//printf("Made expression function call\n");
 	    }
-	  | term {$$ = $1;}
-
-
-
-
-term:	    NAME
+	  | NAME
 	    {		
 	    	TreeNode* returnPointer = malloc(sizeof(TreeNode));
 		returnPointer->argList = NULL;
@@ -211,7 +228,7 @@ value: list 		{
 			}
      |  MINUS NUMBER 	{
      	      		 $$=createVal(ValueType_INT,-((intptr_t) $2));
-			 //printf("Made number\n");
+			 //printf("Made negative number\n");
 			}
      |  NUMBER 		{
 			 $$=createVal(ValueType_INT,(intptr_t) $1);
@@ -224,8 +241,18 @@ list: LBRACKET nodes RBRACKET {$$=$2;}
 
 
 nodes:	       	     	{$$=NULL;}
-     | value nodes	{ValList* returnVal = malloc(sizeof(ValList));
-			 returnVal->value=$1;
-			 returnVal->next=$2;
-			 $$=returnVal;}
+     | value		
+     {
+       	ValList* returnVal = malloc(sizeof(ValList));
+	returnVal->value=$1;
+	returnVal->next=NULL;
+	 $$=returnVal;
+     }
+     | value COMMA nodes
+     {
+	ValList* returnVal = malloc(sizeof(ValList));
+	returnVal->value=$1;
+	returnVal->next=$3;
+	$$=returnVal;
+     }
      ;

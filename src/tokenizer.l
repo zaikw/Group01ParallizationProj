@@ -21,7 +21,7 @@ else			return ELSE;
 \*			{yylval.cval=strdup("mult"); return MULT;}
 \/			{yylval.cval=strdup("div"); return DIV;}
 =			{yylval.cval=strdup("equals"); return EQUAL;}
-,			|
+,			return COMMA;
 \n			|
 \t			|
 .			;
