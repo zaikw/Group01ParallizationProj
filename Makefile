@@ -36,7 +36,8 @@ parser: $(SRC)/tokenizer.l $(SRC)/parser.y $(SRC)/structures.h $(SRC)/structures
 	flex -o $(SRC)/lex.yy.c $(SRC)/tokenizer.l 	
 
 clean:
-	$(RM) $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~
+	ls $(BUILD)/ | grep -v "\." | (cd $(BUILD); xargs $(RM)) 
+	$(RM) $(BUILD)/* $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~
 	$(RM) $(SRC)/parser.tab.h $(SRC)/parser.tab.c $(SRC)/lex.yy.c
 
 -include $(wildcard *.d)		

@@ -10,7 +10,7 @@ map_t symbolmap;
 void valPrint(Val curr) {
   switch (getType(curr)) {
   case ValueType_INT:
-    printf("%lu",getIntVal(curr));
+    printf("%ld",getIntVal(curr));
     break;
   case ValueType_LIST:
     printf("[");
@@ -74,35 +74,46 @@ Val evalCons(Val arg1, Val arg2) {
   return createVal(ValueType_LIST, (intptr_t) newNode);
 }
 
-Val seqEval(TreeNode* curr, ArgName args[]) {
+Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
   switch (getType(curr->value)) {
   case ValueType_CONSTANT:
+    for (int k=0; k < argNum; k++) {
+      if (!strcmp(getCharVal(curr->value),args[k].ident)) {
+	return args[k].value;
+      }
+    }
   case ValueType_FUNCTION:
     if (!strcmp(getCharVal(curr->value),"plus")) {
-      return evalPlus(seqEval(getArgNode(curr,0), args),
-		      seqEval(getArgNode(curr,1), args));
+      return evalPlus(seqEval(getArgNode(curr,0), args, argNum),
+		      seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"minus")) {
-      return evalMinus(seqEval(getArgNode(curr,0), args),
-		      seqEval(getArgNode(curr,1), args));
+      return evalMinus(seqEval(getArgNode(curr,0), args, argNum),
+		      seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"mult")) {
-      return evalMult(seqEval(getArgNode(curr,0), args),
-		      seqEval(getArgNode(curr,1), args));
+      return evalMult(seqEval(getArgNode(curr,0), args, argNum),
+		      seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"div")) {
-      return evalDiv(seqEval(getArgNode(curr,0), args),
-		     seqEval(getArgNode(curr,1), args));
+      return evalDiv(seqEval(getArgNode(curr,0), args, argNum),
+		     seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"equals")) {
-      return evalEqual(seqEval(getArgNode(curr,0), args),
-		       seqEval(getArgNode(curr,1), args));
+      return evalEqual(seqEval(getArgNode(curr,0), args, argNum),
+		       seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"hd")) {
-      return evalHead(seqEval(getArgNode(curr,0), args));
+      return evalHead(seqEval(getArgNode(curr,0), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"tl")) {
-      return evalTail(seqEval(getArgNode(curr,0), args));
+      return evalTail(seqEval(getArgNode(curr,0), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"cons")) {
-      return evalCons(seqEval(getArgNode(curr,0), args),
-		      seqEval(getArgNode(curr,1), args));
+      return evalCons(seqEval(getArgNode(curr,0), args, argNum),
+		      seqEval(getArgNode(curr,1), args, argNum));
+    } else if (!strcmp(getCharVal(curr->value),"ite")) {
+      Val branchBool = seqEval(getArgNode(curr,0), args, argNum);
+      if (branchBool.value.intval)
+	return seqEval(getArgNode(curr,1),args,argNum);
+      else
+	return seqEval(getArgNode(curr,2),args,argNum);
     } else {
       SymbolIdent* temp;
-      hashmap_get(symbol_map, getCharVal(curr->value),&temp);
+      hashmap_get(symbolmap, getCharVal(curr->value),&temp);
       int i = 0;
       NameListNode* count_temp = temp->argNames;
       while (count_temp) {
@@ -112,11 +123,11 @@ Val seqEval(TreeNode* curr, ArgName args[]) {
       count_temp = temp->argNames;
       ArgName arguments[i];
       for (int j = 0; j < i; j++) {
-	arguments[j].value = seqEval(getArgNode(curr,j), args);
+	arguments[j].value = seqEval(getArgNode(curr,j), args, argNum);
 	arguments[j].ident = count_temp->name;
 	count_temp = count_temp->next;
       }
-      return seqEval(temp->parseTree,args);
+      return seqEval(temp->parseTree,arguments,i);
     }
     break;
   case ValueType_INT:
@@ -125,42 +136,44 @@ Val seqEval(TreeNode* curr, ArgName args[]) {
   }
 }
 
-int old_main (int argv, char** argc) {
-  SymbolIdent* it = NULL;
-  //Possible initial read from file here, otherwise:
-  while (1) {
-    it = parse(0);
-    if (it) {
-      Val calced = seqEval(it->parseTree,NULL);
-      printf("it = ");
-      valPrint(calced);
-      printf("\n");
-    }
-  }
-}
-
 int main(int argv, char** argc){
-  symbolmap = newMap();
+  symbolmap = hashmap_new();
   SymbolIdent* it = NULL;
+  void* olololo;
   while(1){
     it = parse(0);
-    if(it){
-      if(it->name != NULL && it->argNames != NULL){
-	if(hashmap_get(m, it->name, NULL) == MAP_OK){
-	  fprintf("redefinition is not alowed");
+    if (it == 5) {
+      return 0;
+    }
+    else if(it){
+      if(it->name){
+	if(hashmap_get(symbolmap, it->name, &olololo) == MAP_OK){
+	    printf("redefinition is not alowed");
 	}
 	else {
-	  hashmap_put(m, it->name, it); 
+	  if (it->argNames) {
+	    hashmap_put(symbolmap, it->name, it);
+	    printf("Defined function %s\n",it->name);
+	  }
+	  else {
+	    SymbolIdent* newIdent = malloc(sizeof(SymbolIdent));
+	    newIdent -> name = it->name;
+	    newIdent -> argNames = NULL;
+	    TreeNode* newNode = malloc(sizeof(TreeNode));
+	    newNode->value = seqEval(it->parseTree,NULL,0);
+	    newNode->argList = NULL;
+	    newIdent -> parseTree = newNode;
+	    hashmap_put(symbolmap, it->name, newIdent);
+	    printf("Defined %s = ",it->name);
+	    valPrint(newNode->value);
+	    printf("\n");
+	  } 
 	}
       }
       else{
-	if(hashmap_get(m, it->name, NULL) == MAP_OK){
-	  fprintf("redefinition is not alowed");
-	}
-	else {
-	  it->parseTree->value = seqEval(it->parseTree);
-	  hashmap_put(m, it->name, it); 
-	}
+	Val calced = seqEval(it->parseTree, NULL,0);
+	valPrint(calced);
+	printf("\n");
       }
     }
   }
