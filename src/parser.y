@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 extern char* strdup(const char*);
+extern FILE *yyin;
 
 }
 
@@ -21,7 +22,7 @@ void yyerror(const char *str)
  
 int yywrap()
 {
-        return 1;
+  return 1;
 } 
 
 SymbolIdent* parse(int inStream) {
@@ -52,9 +53,9 @@ SymbolIdent* parse(int inStream) {
 %type <NLNval> arguments
 %type <PLNval> expressionlist
 %type <cval> infix
-%token <cval> NAME PLUS MINUS MULT DIV
+%token <cval> NAME PLUS MINUS MULT DIV PATH
 %token <i> NUMBER EQUAL
-%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA
+%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA FILEPATH
 %left PLUS MINUS
 %left MULT DIV
 %left EQUAL
@@ -77,11 +78,27 @@ declaration: function COLON
 	       YYACCEPT;
 	     }
              | QUIT {it=(SymbolIdent*)(intptr_t)5; YYACCEPT;}
-	     | error COLON {printf("Syntax error\n"); YYABORT;}
-	     | COLON {YYABORT;}
-	     ;
+	     | FILEPATH PATH COLON
+	     {
+	       yyin=fopen($2,"r");
+	       if (yyin == NULL) {
+		 printf("Invalid file name or path\n");
+		 yyin = stdin;
+		 YYABORT;
+	       }
+	       else {
+		 YYABORT;	 
+	       }
+	     }
+            | END {yyin=stdin;yyrestart(yyin);YYABORT;}
+            | error COLON {printf("Syntax error\n"); YYABORT;}
+            | COLON {YYABORT;}
+            ;
 
-	    
+
+
+
+
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {
