@@ -13,7 +13,7 @@ typedef enum ValueType {
 typedef struct ValList ValList;
 
 typedef struct {
-  union { //Last two bits are type identifier
+  union {
     intptr_t intval;
     struct ValList* listStart;
     char* identifier;
