@@ -10,7 +10,7 @@ typedef enum ValueType {
   ValueType_FUNCTION
 } ValueType;
 
-typedef struct ValList ValList;
+typedef struct ValList;
 
 typedef struct {
   union {
