@@ -59,5 +59,7 @@ Val createVal(ValueType type, intptr_t value);
 intptr_t getIntVal (Val v);
 char* getCharVal(Val v);
 ValList* getListVal (Val v);
+int getListLength(Val v);
+int getListsEqual(Val arg1, Val arg2);
 
 #endif

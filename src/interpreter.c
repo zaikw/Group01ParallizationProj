@@ -53,17 +53,29 @@ Val evalMult(Val arg1, Val arg2) {
 }
 
 Val evalEqual(Val arg1, Val arg2) {
-  return createVal(ValueType_INT, getCharVal(arg1) == getCharVal(arg2));
+  if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
+    return createVal(ValueType_INT, getCharVal(arg1) == getCharVal(arg2));
+  }
+  else if(getType(arg1) == ValueType_LIST && getType(arg2) == ValueType_LIST){
+    return createVal(ValueType_INT, getListsEqual(arg1, arg2));
+  }
+  else{
+    return createVal(ValueType_INT, 0);
+  }
 }
 
 Val evalHead(Val arg) {
-  assert(getType(arg) == ValueType_LIST);
+  //assert(getType(arg) == ValueType_LIST);
   return getListVal(arg)->value;
 }
 
 Val evalTail(Val arg) {
   //assert(getType(arg) == ValueType_LIST);
   return createVal(ValueType_LIST, (intptr_t) getListVal(arg)->next);
+}
+
+Val evalLength(Val arg) {
+  return createVal(ValueType_INT, getListLength(arg));
 }
 
 Val evalCons(Val arg1, Val arg2) {
@@ -73,6 +85,33 @@ Val evalCons(Val arg1, Val arg2) {
   newNode->next = getListVal(arg2);
   return createVal(ValueType_LIST, (intptr_t) newNode);
 }
+
+
+Val evalLesser(Val arg1, Val arg2) {
+  if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
+    return createVal(ValueType_INT, (getIntVal(arg1) < getIntVal(arg2)));
+  }
+  else if(getType(arg1) == ValueType_LIST && getType(arg2) == ValueType_LIST){
+    return createVal(ValueType_INT, (getListLength(arg1) < getListLength(arg2)));
+  }
+  else{
+    return createVal(ValueType_INT, 0);
+  }
+}
+
+Val evalGreater(Val arg1, Val arg2) {
+  if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
+    return createVal(ValueType_INT, (getIntVal(arg1) > getIntVal(arg2)));
+  }
+  else if(getType(arg1) == ValueType_LIST && getType(arg2) == ValueType_LIST){
+    return createVal(ValueType_INT, (getListLength(arg1) > getListLength(arg2)));
+  }
+  else{
+    return createVal(ValueType_INT, 0);
+  }
+}
+
+
 
 Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
   switch (getType(curr->value)) {
@@ -102,9 +141,17 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
       return evalHead(seqEval(getArgNode(curr,0), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"tl")) {
       return evalTail(seqEval(getArgNode(curr,0), args, argNum));
+    } else if (!strcmp(getCharVal(curr->value),"length")) {
+      return evalLength(seqEval(getArgNode(curr,0), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"cons")) {
       return evalCons(seqEval(getArgNode(curr,0), args, argNum),
 		      seqEval(getArgNode(curr,1), args, argNum));
+    } else if (!strcmp(getCharVal(curr->value),"lesser")) {
+      return evalLesser(seqEval(getArgNode(curr,0), args, argNum),
+		      seqEval(getArgNode(curr,1), args, argNum));
+    } else if (!strcmp(getCharVal(curr->value),"greater")) {
+      return evalGreater(seqEval(getArgNode(curr,0), args, argNum),
+			seqEval(getArgNode(curr,1), args, argNum));
     } else if (!strcmp(getCharVal(curr->value),"ite")) {
       Val branchBool = seqEval(getArgNode(curr,0), args, argNum);
       if (branchBool.value.intval)

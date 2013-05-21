@@ -23,6 +23,40 @@ ValList* getListVal(Val v) {
   return v.value.listStart;
 }
 
+int getListLength(Val v) {
+  ValList* tempList = getListVal(v);  
+  if(!tempList){
+    return 0;
+  }
+  else{
+    int i = 1;
+    while(tempList->next){
+      tempList = tempList->next;
+      i++;
+    }
+    return i;
+  }
+}
+
+int getListsEqual(Val arg1, Val arg2) {
+  ValList* tempList1 = getListVal(arg1);
+  ValList* tempList2 = getListVal(arg2);
+  while(tempList1 && tempList2){
+    if(getIntVal(tempList1->value) != getIntVal(tempList2->value))
+      return 0;
+    tempList1 = tempList1->next;
+    tempList2 = tempList2->next;
+  }
+  if((!tempList1 && !tempList2)){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+     
+
+
 char* getCharVal(Val v) {
   return v.value.identifier;
 }
