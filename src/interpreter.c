@@ -34,7 +34,7 @@ void valPrint(Val curr) {
 
 Val evalPlus(Val arg1, Val arg2) {
   //assert(getType(arg1) == getType(arg2) == ValueType_INT);
-    return createVal(ValueType_INT, getIntVal(arg1)+getIntVal(arg2));
+  return createVal(ValueType_INT, getIntVal(arg1)+getIntVal(arg2));
 }
 
 Val evalMinus(Val arg1, Val arg2) {

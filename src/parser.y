@@ -12,6 +12,7 @@ extern FILE *yyin;
 #include <stdio.h>
 #include "structures.h"
 #include "parser.h"
+extern FILE *yyin;
 
 SymbolIdent* it = NULL;
 
@@ -22,7 +23,9 @@ void yyerror(const char *str)
  
 int yywrap()
 {
-  return 1;
+  fclose(yyin); 
+  yyrestart(stdin);
+  return 0;
 } 
 
 SymbolIdent* parse(int inStream) {
@@ -84,21 +87,12 @@ declaration: function COLON
 	       if (yyin == NULL) {
 		 printf("Invalid file name or path\n");
 		 yyin = stdin;
-		 YYABORT;
 	       }
-	       else {
-		 YYABORT;	 
-	       }
+	       YYABORT;	 
 	     }
-            | END {yyin=stdin;yyrestart(yyin);YYABORT;}
             | error COLON {printf("Syntax error\n"); YYABORT;}
             | COLON {YYABORT;}
             ;
-
-
-
-
-
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {
