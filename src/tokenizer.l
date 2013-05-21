@@ -6,6 +6,8 @@
 fun			return FUNCTION;
 val 			return VALUE;
 quit			return QUIT;
+file                    return FILEPATH;
+\/[0-9a-zA-z"/""."]+    {yylval.cval=strdup(yytext); return PATH;}
 if			return IF;
 then 			return THEN;
 else			return ELSE;
@@ -24,6 +26,7 @@ else			return ELSE;
 \>                      {yylval.cval=strdup("greater"); return GREATER;}
 =			{yylval.cval=strdup("equals"); return EQUAL;}
 ,			return COMMA;
+<<EOF>>                 return END;
 \n			|
 \t			|
 .			;

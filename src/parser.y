@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 extern char* strdup(const char*);
+extern FILE *yyin;
 
 }
 
@@ -21,7 +22,7 @@ void yyerror(const char *str)
  
 int yywrap()
 {
-        return 1;
+  return 1;
 } 
 
 SymbolIdent* parse(int inStream) {
@@ -43,7 +44,7 @@ SymbolIdent* parse(int inStream) {
        ValList* VLval;
        Val Vval;
        intptr_t i;
-}      
+}
 %type <TNval> expression term
 %type <SIval> function constant base_expr
 %type <Vval> value
@@ -52,9 +53,9 @@ SymbolIdent* parse(int inStream) {
 %type <NLNval> arguments
 %type <PLNval> expressionlist
 %type <cval> infix
-%token <cval> NAME PLUS MINUS MULT DIV LESSER GREATER
+%token <cval> NAME PLUS MINUS MULT DIV LESSER GREATER PATH
 %token <i> NUMBER EQUAL
-%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA
+%token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA FILEPATH
 %left PLUS MINUS
 %left MULT DIV
 %left EQUAL
@@ -63,25 +64,41 @@ SymbolIdent* parse(int inStream) {
 declaration: function COLON 
 	     {
 	       it=$1; 
-	       //printf("Made function\n"); 
+	       printf("Made function\n"); 
 	       YYACCEPT;
 	     }
 	     | constant COLON {
 	       it=$1; 
-	       //printf("Made value\n"); 
+	       printf("Made value\n"); 
 	       YYACCEPT;
 	     }
 	     | base_expr COLON {
 	       it=$1; 
-	       //printf("Made base expression\n"); 
+	       printf("Made base expression\n"); 
 	       YYACCEPT;
 	     }
              | QUIT {it=(SymbolIdent*)(intptr_t)5; YYACCEPT;}
-	     | error COLON {printf("Syntax error\n"); YYABORT;}
-	     | COLON {YYABORT;}
-	     ;
+	     | FILEPATH PATH COLON
+	     {
+	       yyin=fopen($2,"r");
+	       if (yyin == NULL) {
+		 printf("Invalid file name or path\n");
+		 yyin = stdin;
+		 YYABORT;
+	       }
+	       else {
+		 YYABORT;	 
+	       }
+	     }
+            | END {yyin=stdin;yyrestart(yyin);YYABORT;}
+            | error COLON {printf("Syntax error\n"); YYABORT;}
+            | COLON {YYABORT;}
+            ;
 
-	    
+
+
+
+
 
 function: FUNCTION NAME LPARENS arguments RPARENS EQUAL expression
 	  {
@@ -162,7 +179,7 @@ expression: expression infix term
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) $2);
 		$$ = returnPointer;
-		//printf("Made expression infix function call to %s\n", $2);
+		printf("Made expression infix function call to %s\n", $2);
 	    }
 	  | IF expression THEN expression ELSE expression
 	    {
@@ -180,7 +197,7 @@ expression: expression infix term
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) strdup("ite"));
 		$$ = returnPointer;
-		//printf("Made if-then-else expression\n");
+		printf("Made if-then-else expression\n");
 	    }
 	  | term {$$ = $1;}
 
@@ -194,7 +211,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) $1);
 		$$ = returnPointer;
-		//printf("Made expression function call\n");
+		printf("Made expression function call\n");
 	    }
 	  | NAME
 	    {		
@@ -203,7 +220,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->value = 
 		createVal(ValueType_CONSTANT, (intptr_t) $1);
 		$$ = returnPointer;
-		//printf("Made expression symbol reference to %s\n",$1);
+		printf("Made expression symbol reference to %s\n",$1);
 	    }
           | value
 	    {
@@ -211,7 +228,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->argList = NULL;
 		returnPointer->value = $1;
 		$$ = returnPointer;
-		//printf("Made expression constant value\n");
+		printf("Made expression constant value\n");
 	    }
 	  | LPARENS expression RPARENS {$$ = $2;}	    	  
 	    ;
@@ -226,15 +243,15 @@ infix:	       PLUS	{$$ = $1;}
 
 value: list 		{
        			 $$=createVal(ValueType_LIST,(intptr_t) $1);
-       			 //printf("Made list\n");
+       			 printf("Made list\n");
 			}
      |  MINUS NUMBER 	{
      	      		 $$=createVal(ValueType_INT,-((intptr_t) $2));
-			 //printf("Made negative number\n");
+			 printf("Made negative number\n");
 			}
      |  NUMBER 		{
 			 $$=createVal(ValueType_INT,(intptr_t) $1);
-			 //printf("Made number\n");
+			 printf("Made number\n");
 			}
      ;
 
