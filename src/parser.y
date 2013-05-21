@@ -52,7 +52,7 @@ SymbolIdent* parse(int inStream) {
 %type <NLNval> arguments
 %type <PLNval> expressionlist
 %type <cval> infix
-%token <cval> NAME PLUS MINUS MULT DIV
+%token <cval> NAME PLUS MINUS MULT DIV LESSER GREATER
 %token <i> NUMBER EQUAL
 %token END FUNCTION VALUE LBRACKET RBRACKET LPARENS RPARENS COLON QUIT IF THEN ELSE COMMA
 %left PLUS MINUS
@@ -221,6 +221,8 @@ infix:	       PLUS	{$$ = $1;}
 	     | MULT	{$$ = $1;}
 	     | DIV	{$$ = $1;}
 	     | EQUAL	{$$ = $1;}
+             | LESSER   {$$ = $1;}
+             | GREATER  {$$ = $1;}
 
 value: list 		{
        			 $$=createVal(ValueType_LIST,(intptr_t) $1);

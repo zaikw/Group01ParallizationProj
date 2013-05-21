@@ -20,6 +20,8 @@ else			return ELSE;
 -			{yylval.cval=strdup("minus"); return MINUS;}
 \*			{yylval.cval=strdup("mult"); return MULT;}
 \/			{yylval.cval=strdup("div"); return DIV;}
+\<                      {yylval.cval=strdup("lesser"); return LESSER;}
+\>                      {yylval.cval=strdup("greater"); return GREATER;}
 =			{yylval.cval=strdup("equals"); return EQUAL;}
 ,			return COMMA;
 \n			|
