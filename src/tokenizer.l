@@ -16,9 +16,9 @@ else			return ELSE;
 \)			return RPARENS;
 ;			return COLON;
 ,			return COMMA;
+div			{yylval.cval=strdup("div"); return DIV;}
 [0-9]+			{yylval.i=(intptr_t)atoi(yytext); return NUMBER;}
 [a-zA-Z][0-9a-zA-Z]* 	{yylval.cval=strdup(yytext); return NAME;}
-\/			{yylval.cval=strdup("div"); return DIV;}
 [\/".""~"][0-9a-zA-z"/""."]+    {yylval.cval=strdup(yytext); return PATH;}
 \+			{yylval.cval=strdup("plus"); return PLUS;}
 -			{yylval.cval=strdup("minus"); return MINUS;}
