@@ -15,17 +15,17 @@ else			return ELSE;
 \(			return LPARENS;
 \)			return RPARENS;
 ;			return COLON;
+,			return COMMA;
 [0-9]+			{yylval.i=(intptr_t)atoi(yytext); return NUMBER;}
 [a-zA-Z][0-9a-zA-Z]* 	{yylval.cval=strdup(yytext); return NAME;}
-[0-9a-zA-z"/""."]+      {yylval.cval=strdup(yytext); return PATH;}
+\/			{yylval.cval=strdup("div"); return DIV;}
+[\/".""~"][0-9a-zA-z"/""."]+    {yylval.cval=strdup(yytext); return PATH;}
 \+			{yylval.cval=strdup("plus"); return PLUS;}
 -			{yylval.cval=strdup("minus"); return MINUS;}
 \*			{yylval.cval=strdup("mult"); return MULT;}
-\/			{yylval.cval=strdup("div"); return DIV;}
 \<                      {yylval.cval=strdup("lesser"); return LESSER;}
 \>                      {yylval.cval=strdup("greater"); return GREATER;}
 =			{yylval.cval=strdup("equals"); return EQUAL;}
-,			return COMMA;
 \n			|
 \t			|
 .			;
