@@ -4,10 +4,11 @@
 
 DEBUG ?=y
 
-CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -w
+CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -lrt -w
 LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
+ETST=./tests
 
 
 CC=gcc
@@ -21,6 +22,9 @@ else
 endif
 
 all: 	interpreter
+
+test:	all
+	$(BUILD)/interpreter -f $(TEST)/master_suite
 
 run: 	all
 	$(BUILD)/interpreter

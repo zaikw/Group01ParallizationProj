@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 extern char* strdup(const char*);
-extern FILE *yyin;
+extern FILE* yyin;
 
 }
 
@@ -12,10 +12,12 @@ extern FILE *yyin;
 #include <stdio.h>
 #include "structures.h"
 #include "parser.h"
-extern FILE *yyin;
+#define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
 
+extern FILE* yyin;
+extern FILE* debug; 
 SymbolIdent* it = NULL;
-
+  
 void yyerror(const char *str)
 {
   //fprintf(stderr,"error: %s\n",str);
@@ -28,8 +30,9 @@ int yywrap()
   return 0;
 } 
 
-SymbolIdent* parse(int inStream) {
-  //Setup insteam if neccecary
+SymbolIdent* parse(FILE* inStream, FILE* debugStream) {
+  if (inStream != NULL)
+    yyin = inStream;
   if (!yyparse())
     return it;
   else //Parsing failed for whatever reason
@@ -67,17 +70,17 @@ SymbolIdent* parse(int inStream) {
 declaration: function COLON 
 	     {
 	       it=$1; 
-	       printf("Made function\n"); 
+	       DPRINT("Made function\n"); 
 	       YYACCEPT;
 	     }
 	     | constant COLON {
 	       it=$1; 
-	       printf("Made value\n"); 
+	       DPRINT("Made value\n"); 
 	       YYACCEPT;
 	     }
 	     | base_expr COLON {
 	       it=$1; 
-	       printf("Made base expression\n"); 
+	       DPRINT("Made base expression\n"); 
 	       YYACCEPT;
 	     }
              | QUIT {it=(SymbolIdent*)(intptr_t)5; YYACCEPT;}
@@ -173,7 +176,7 @@ expression: expression infix term
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) $2);
 		$$ = returnPointer;
-		printf("Made expression infix function call to %s\n", $2);
+		DPRINT("Made expression infix function call to %s\n", $2);
 	    }
 	  | IF expression THEN expression ELSE expression
 	    {
@@ -191,7 +194,7 @@ expression: expression infix term
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) strdup("ite"));
 		$$ = returnPointer;
-		printf("Made if-then-else expression\n");
+		DPRINT("Made if-then-else expression\n");
 	    }
 	  | term {$$ = $1;}
 
@@ -205,7 +208,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->value = 
 		createVal(ValueType_FUNCTION, (intptr_t) $1);
 		$$ = returnPointer;
-		printf("Made expression function call\n");
+		DPRINT("Made expression function call\n");
 	    }
 	  | NAME
 	    {		
@@ -214,7 +217,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->value = 
 		createVal(ValueType_CONSTANT, (intptr_t) $1);
 		$$ = returnPointer;
-		printf("Made expression symbol reference to %s\n",$1);
+		DPRINT("Made expression symbol reference to %s\n",$1);
 	    }
           | value
 	    {
@@ -222,7 +225,7 @@ term:	    NAME LPARENS expressionlist RPARENS
 		returnPointer->argList = NULL;
 		returnPointer->value = $1;
 		$$ = returnPointer;
-		printf("Made expression constant value\n");
+		DPRINT("Made expression constant value\n");
 	    }
 	  | LPARENS expression RPARENS {$$ = $2;}	    	  
 	    ;
@@ -237,15 +240,15 @@ infix:	       PLUS	{$$ = $1;}
 
 value: list 		{
        			 $$=createVal(ValueType_LIST,(intptr_t) $1);
-       			 printf("Made list\n");
+       			 DPRINT("Made list\n");
 			}
      |  MINUS NUMBER 	{
      	      		 $$=createVal(ValueType_INT,-((intptr_t) $2));
-			 printf("Made negative number\n");
+			 DPRINT("Made negative number\n");
 			}
      |  NUMBER 		{
 			 $$=createVal(ValueType_INT,(intptr_t) $1);
-			 printf("Made number\n");
+			 DPRINT("Made number\n");
 			}
      ;
 

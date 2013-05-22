@@ -7,10 +7,15 @@
 #include <pthread.h>
 #include <time.h>
 
+#define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
+
+
 char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"};
 int DEF_NUM = 11;
 
 map_t symbolmap;
+FILE* debug = NULL;
+
 
 typedef struct {
   pthread_t id;
@@ -30,6 +35,7 @@ typedef struct {
 } ForkArgs;
 
 pthread_t checkFork(ForkArgs*);
+
 void valPrint(Val curr) {
   switch (getType(curr)) {
   case ValueType_INT:
@@ -143,27 +149,29 @@ int exists(const char* str) {
 }
 
 Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
-  printf("%ld: entering eval\n", pthread_self());
+  DPRINT("%ld: entering eval\n", pthread_self());
   switch (getType(curr->value)) {
   case ValueType_CONSTANT:
     for (int k=0; k < argNum; k++) {
       if (!strcmp(getCharVal(curr->value),args[k].ident)) {
+	DPRINT("%ld: evaluated a symbol from arguments\n", pthread_self());
 	return args[k].value;
       }
     }
   case ValueType_FUNCTION:
     if (!strcmp(getCharVal(curr->value),"ite")) {
+      DPRINT("%ld: evaluated a if-then-else case\n", pthread_self());
       Val branchBool = seqEval(getArgNode(curr,0), args, argNum);
       if (branchBool.value.intval)
 	return seqEval(getArgNode(curr,1),args,argNum);
       else
 	return seqEval(getArgNode(curr,2),args,argNum);
     } else if (!strcmp(getCharVal(curr->value),"time")) {
-      clock_t begin, end;
-      begin = gettimeofday();
-      seqEval(getArgNode(curr,0), args, argNum);
-      end = gettimeofday();
-      return createVal(ValueType_INT, (intptr_t)(end-begin));
+      struct timespec tstart={0,0}, tend={0,0};
+      clock_gettime(CLOCK_MONOTONIC, &tstart);
+      seqEval(getArgNode(curr,0), args, argNum);      
+      clock_gettime(CLOCK_MONOTONIC, &tend);
+      return createVal(ValueType_INT, (intptr_t)(((double)tend.tv_sec + 1.0e-9*tend.tv_nsec)-((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec)));
     } else { //Execute arguments
       int i = 0;
       PointerListNode* temp = curr->argList;
@@ -171,19 +179,14 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
       ThreadTuple* argList = malloc(sizeof(ThreadTuple)*i);
       ForkArgs forkArgs[i];
       temp = curr->argList;
-      printf("%ld: entering fork loop\n", pthread_self());
       for (int j = 0; j < i; j++) {
 	forkArgs[j].target = temp->target;
 	forkArgs[j].args = args;
 	forkArgs[j].num = argNum;
 	forkArgs[j].returnVal = &(argList[j].value);
-	printf("%ld: Temp is %d\n",pthread_self(), temp);
 	argList[j].id = checkFork(&(forkArgs[j]));
-	printf("%ld: Temp is %d\n",pthread_self(), temp);
 	temp = temp->next;
       }
-      printf("%ld: exiting fork loop\n", pthread_self());
-      
       temp = curr->argList;
       for (int j = 0; j < i; j++) {
 	if (!argList[j].id) {
@@ -235,12 +238,14 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	  arguments[l].ident = count_temp->name;
 	  count_temp = count_temp->next;
 	}
+	DPRINT("%ld: evaluated user-defined symbol %s\n", pthread_self(), getCharVal(curr->value));
 	return seqEval(symbolGot->parseTree,arguments,k);
       }
       break;
     }
   case ValueType_INT:
   case ValueType_LIST:
+    DPRINT("%ld: evaluated a constant value\n", pthread_self());
     return curr->value;
   }
 }
@@ -257,25 +262,56 @@ pthread_t checkFork(ForkArgs* args)
   if (getType(args->target->value) == ValueType_FUNCTION) {
     if (!exists(args->target->value.value.identifier)) {
       pthread_create(&tid, NULL, prepSeqEval, args);
-      printf("%ld: Created thread %ld\n", pthread_self(), tid);
+      DPRINT("%ld: Created thread %ld\n", pthread_self(), tid);
     }
   }
   return tid; 
 }
 
-int main(int argv, char** argc){
+int main(int argv, char* argc[]) {
   symbolmap = hashmap_new();
+  FILE* in = stdin;
+  if (argv > 1) {
+    for (int n = 1; n < argv; n++) {
+      if (!strcmp(argc[n],"-f")) {
+	in = fopen(argc[n+1],"r");
+	if (!in) {
+	  printf("Failed to open %s\n", argc[n+1]);
+	  in = stdin;
+	}
+	n++;
+      }
+      else if (!strcmp(argc[n],"-d")) {
+	if ((argv == n+1) || argc[n+1][0] == '-') {
+	  debug = stdout;
+	}
+	else {
+	  debug = fopen(argc[n+1],"w");
+	  printf("%s\n",argc[n+1]);
+	  if (!debug)
+	    printf("Failed to open debug file %s\n", argc[n+1]);
+	  n++;
+	}
+      }
+    }
+  }
+  return interpretate(in);
+}
+  
+int interpretate (FILE* in) {
   SymbolIdent* it = NULL;
   void* olololo;
   while(1){
-    it = parse(0);
+    it = parse(in, debug);
     if (it == 5) {
+      if (debug != stdin)
+	fclose(debug);
       return 0;
     }
     else if(it){
       if(it->name){
 	if(hashmap_get(symbolmap, it->name, &olololo) == MAP_OK){
-	    printf("redefinition is not alowed");
+	  printf("redefinition is not allowed");
 	}
 	else {
 	  if (it->argNames) {
@@ -306,3 +342,4 @@ int main(int argv, char** argc){
   }
   return 0;
 }
+

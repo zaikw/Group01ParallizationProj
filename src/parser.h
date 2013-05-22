@@ -3,6 +3,6 @@
 #include "structures.h"
 
 
-SymbolIdent* parse(int inStream);
+SymbolIdent* parse(FILE* inStream, FILE* debug);
 
 #endif
