@@ -9,14 +9,14 @@
 #include <time.h>
 
 #define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
-
+int MAX_THREADS = 10;
+int NUM_THREADS = 0;
 
 char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"};
 int DEF_NUM = 12;
 
 map_t symbolmap;
 FILE* debug = NULL;
-int sequential = 0;
 
 typedef struct {
   pthread_t id;
@@ -260,16 +260,18 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 void* prepSeqEval(void* arguments) {
   ForkArgs* args = (ForkArgs*) arguments;
   *(args->returnVal) = seqEval(args->target, args->args, args-> num);
+  NUM_THREADS--;
   return 0;
- }
+}
 
 pthread_t checkFork(ForkArgs* args)
 {
   pthread_t tid = 0;
-  if (!sequential && getType(args->target->value) == ValueType_FUNCTION) {
+  if (NUM_THREADS < MAX_THREADS && getType(args->target->value) == ValueType_FUNCTION) {
     if (!exists(args->target->value.value.identifier)) {
       pthread_create(&tid, NULL, prepSeqEval, args);
       DPRINT("%ld: Created thread %ld\n", pthread_self(), tid);
+      NUM_THREADS++;
     }
   }
   return tid; 
@@ -347,7 +349,7 @@ int main(int argv, char* argc[]) {
 	  n++;
 	}
       } else if (!strcmp(argc[n],"-s")) {
-	sequential = 1;
+	MAX_THREADS = 0;
       }
     }
   }
