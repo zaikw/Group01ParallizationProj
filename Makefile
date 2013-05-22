@@ -4,7 +4,7 @@
 
 DEBUG ?=y
 
-CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -w
+CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600
 LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
