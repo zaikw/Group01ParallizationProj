@@ -5,8 +5,9 @@
 #include "parser.h"
 #include "hashmap.h"
 #include <pthread.h>
+#include <time.h>
 
-char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length"};
+char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"};
 int DEF_NUM = 11;
 
 map_t symbolmap;
@@ -157,6 +158,12 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	return seqEval(getArgNode(curr,1),args,argNum);
       else
 	return seqEval(getArgNode(curr,2),args,argNum);
+    } else if (!strcmp(getCharVal(curr->value),"time")) {
+      clock_t begin, end;
+      begin = gettimeofday();
+      seqEval(getArgNode(curr,0), args, argNum);
+      end = gettimeofday();
+      return createVal(ValueType_INT, (intptr_t)(end-begin));
     } else { //Execute arguments
       int i = 0;
       PointerListNode* temp = curr->argList;
@@ -199,7 +206,7 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
       } else if (!strcmp(getCharVal(curr->value),"div")) {
 	return evalDiv(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"equals")) {
-      return evalEqual(argList[0].value,argList[1].value);
+	return evalEqual(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"hd")) {
 	return evalHead(argList[0].value);
       } else if (!strcmp(getCharVal(curr->value),"tl")) {
@@ -211,7 +218,7 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
       } else if (!strcmp(getCharVal(curr->value),"lesser")) {
 	return evalLesser(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"greater")) {
-      return evalGreater(argList[0].value,argList[1].value);
+	return evalGreater(argList[0].value,argList[1].value);
       } else {
 	SymbolIdent* symbolGot;
 	hashmap_get(symbolmap, getCharVal(curr->value),&symbolGot);
@@ -242,7 +249,7 @@ void* prepSeqEval(void* arguments) {
   ForkArgs* args = (ForkArgs*) arguments;
   *(args->returnVal) = seqEval(args->target, args->args, args-> num);
   return 0;
-}
+ }
 
 pthread_t checkFork(ForkArgs* args)
 {
