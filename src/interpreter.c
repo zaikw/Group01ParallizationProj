@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "structures.h"
 #include "parser.h"
 #include "hashmap.h"
@@ -13,7 +14,7 @@ int DEF_NUM = 11;
 
 map_t symbolmap;
 FILE* debug = NULL;
-
+int sequential = 0;
 
 typedef struct {
   pthread_t id;
@@ -60,22 +61,18 @@ void valPrint(Val curr) {
 }
 
 Val evalPlus(Val arg1, Val arg2) {
-  //assert(getType(arg1) == getType(arg2) == ValueType_INT);
   return createVal(ValueType_INT, getIntVal(arg1)+getIntVal(arg2));
 }
 
 Val evalMinus(Val arg1, Val arg2) {
-  //assert(getType(arg1) == getType(arg2) == ValueType_INT);
   return createVal(ValueType_INT, getIntVal(arg1)-getIntVal(arg2));
 }
 
 Val evalDiv(Val arg1, Val arg2) {
-  //assert(getType(arg1) == getType(arg2) == ValueType_INT);
   return createVal(ValueType_INT, getIntVal(arg1)/getIntVal(arg2));
 }
 
 Val evalMult(Val arg1, Val arg2) {
-  //assert(getType(arg1) == getType(arg2) == ValueType_INT);
   return createVal(ValueType_INT, getIntVal(arg1)*getIntVal(arg2));
 }
 
@@ -92,12 +89,10 @@ Val evalEqual(Val arg1, Val arg2) {
 }
 
 Val evalHead(Val arg) {
-  //assert(getType(arg) == ValueType_LIST);
   return getListVal(arg)->value;
 }
 
 Val evalTail(Val arg) {
-  //assert(getType(arg) == ValueType_LIST);
   return createVal(ValueType_LIST, (intptr_t) getListVal(arg)->next);
 }
 
@@ -106,7 +101,6 @@ Val evalLength(Val arg) {
 }
 
 Val evalCons(Val arg1, Val arg2) {
-  //assert(getType(arg2) == ValueType_LIST);
   ValList* newNode = malloc(sizeof(ValList));
   newNode->value = arg1;
   newNode->next = getListVal(arg2);
@@ -192,28 +186,40 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	  pthread_join(argList[j].id, &bogus);
 	}
       }
+      
       if (!strcmp(getCharVal(curr->value),"plus")) {
+	free(argList);
 	return evalPlus(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"minus")) {
+	free(argList);
 	return evalMinus(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"mult")) {
+	free(argList);
 	return evalMult(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"div")) {
+	free(argList);
 	return evalDiv(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"equals")) {
+	free(argList);
       return evalEqual(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"hd")) {
+	free(argList);
 	return evalHead(argList[0].value);
       } else if (!strcmp(getCharVal(curr->value),"tl")) {
+	free(argList);
 	return evalTail(argList[0].value);
       } else if (!strcmp(getCharVal(curr->value),"length")) {
+	free(argList);
 	return evalLength(argList[0].value);
       } else if (!strcmp(getCharVal(curr->value),"cons")) {
+	free(argList);
 	return evalCons(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"lesser")) {
+	free(argList);
 	return evalLesser(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"greater")) {
-      return evalGreater(argList[0].value,argList[1].value);
+	free(argList);
+	return evalGreater(argList[0].value,argList[1].value);
       } else {
 	SymbolIdent* symbolGot;
 	hashmap_get(symbolmap, getCharVal(curr->value),&symbolGot);
@@ -231,6 +237,7 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	  count_temp = count_temp->next;
 	}
 	DPRINT("%ld: evaluated user-defined symbol %s\n", pthread_self(), getCharVal(curr->value));
+	free(argList);
 	return seqEval(symbolGot->parseTree,arguments,k);
       }
       break;
@@ -251,7 +258,7 @@ void* prepSeqEval(void* arguments) {
 pthread_t checkFork(ForkArgs* args)
 {
   pthread_t tid = 0;
-  if (getType(args->target->value) == ValueType_FUNCTION) {
+  if (!sequential && getType(args->target->value) == ValueType_FUNCTION) {
     if (!exists(args->target->value.value.identifier)) {
       pthread_create(&tid, NULL, prepSeqEval, args);
       DPRINT("%ld: Created thread %ld\n", pthread_self(), tid);
@@ -260,36 +267,6 @@ pthread_t checkFork(ForkArgs* args)
   return tid; 
 }
 
-int main(int argv, char* argc[]) {
-  symbolmap = hashmap_new();
-  FILE* in = stdin;
-  if (argv > 1) {
-    for (int n = 1; n < argv; n++) {
-      if (!strcmp(argc[n],"-f")) {
-	in = fopen(argc[n+1],"r");
-	if (!in) {
-	  printf("Failed to open %s\n", argc[n+1]);
-	  in = stdin;
-	}
-	n++;
-      }
-      else if (!strcmp(argc[n],"-d")) {
-	if ((argv == n+1) || argc[n+1][0] == '-') {
-	  debug = stdout;
-	}
-	else {
-	  debug = fopen(argc[n+1],"w");
-	  printf("%s\n",argc[n+1]);
-	  if (!debug)
-	    printf("Failed to open debug file %s\n", argc[n+1]);
-	  n++;
-	}
-      }
-    }
-  }
-  return interpretate(in);
-}
-  
 int interpretate (FILE* in) {
   SymbolIdent* it = NULL;
   void* olololo;
@@ -302,7 +279,8 @@ int interpretate (FILE* in) {
     }
     else if(it){
       if(it->name){
-	if(hashmap_get(symbolmap, it->name, &olololo) == MAP_OK){
+	if(exists(it->name) || 
+	   hashmap_get(symbolmap, it->name, &olololo) == MAP_OK){
 	  printf("redefinition is not allowed");
 	}
 	else {
@@ -329,9 +307,44 @@ int interpretate (FILE* in) {
 	Val calced = seqEval(it->parseTree, NULL,0);
 	valPrint(calced);
 	printf("\n");
+	freeSymbol(it);
+	freeVal(calced);
       }
     }
   }
   return 0;
 }
+
+int main(int argv, char* argc[]) {
+  symbolmap = hashmap_new();
+  FILE* in = stdin;
+  if (argv > 1) {
+    for (int n = 1; n < argv; n++) {
+      if (!strcmp(argc[n],"-f")) {
+	in = fopen(argc[n+1],"r");
+	if (!in) {
+	  printf("Failed to open %s\n", argc[n+1]);
+	  in = stdin;
+	}
+	n++;
+      } else if (!strcmp(argc[n],"-d")) {
+	if ((argv == n+1) || argc[n+1][0] == '-') {
+	  debug = stdout;
+	}
+	else {
+	  debug = fopen(argc[n+1],"w");
+	  printf("%s\n",argc[n+1]);
+	  if (!debug)
+	    printf("Failed to open debug file %s\n", argc[n+1]);
+	  n++;
+	}
+      } else if (!strcmp(argc[n],"-s")) {
+	sequential = 1;
+      }
+    }
+  }
+  return interpretate(in);
+}
+  
+
 

@@ -2,6 +2,7 @@
 #include "structures.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 extern char* strdup(const char*);
 extern FILE* yyin;
@@ -16,6 +17,7 @@ extern FILE* yyin;
 
 extern FILE* yyin;
 extern FILE* debug; 
+
 SymbolIdent* it = NULL;
   
 void yyerror(const char *str)
