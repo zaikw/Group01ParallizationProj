@@ -6,11 +6,13 @@
 #include "parser.h"
 #include "hashmap.h"
 #include <pthread.h>
+#include <time.h>
+
 #define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
 
 
-char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length"};
-int DEF_NUM = 11;
+char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"};
+int DEF_NUM = 12;
 
 map_t symbolmap;
 FILE* debug = NULL;
@@ -158,6 +160,12 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	return seqEval(getArgNode(curr,1),args,argNum);
       else
 	return seqEval(getArgNode(curr,2),args,argNum);
+    } else if (!strcmp(getCharVal(curr->value),"time")) {
+      struct timespec tstart={0,0}, tend={0,0};
+      clock_gettime(CLOCK_MONOTONIC, &tstart);
+      seqEval(getArgNode(curr,0), args, argNum);      
+      clock_gettime(CLOCK_MONOTONIC, &tend);
+      return createVal(ValueType_INT, (intptr_t) (((double)tend.tv_sec + 1.0e-9*tend.tv_nsec)-((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec)));
     } else { //Execute arguments
       int i = 0;
       PointerListNode* temp = curr->argList;
@@ -201,7 +209,7 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 	return evalDiv(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"equals")) {
 	free(argList);
-      return evalEqual(argList[0].value,argList[1].value);
+	return evalEqual(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"hd")) {
 	free(argList);
 	return evalHead(argList[0].value);
@@ -253,7 +261,7 @@ void* prepSeqEval(void* arguments) {
   ForkArgs* args = (ForkArgs*) arguments;
   *(args->returnVal) = seqEval(args->target, args->args, args-> num);
   return 0;
-}
+ }
 
 pthread_t checkFork(ForkArgs* args)
 {
@@ -345,6 +353,3 @@ int main(int argv, char* argc[]) {
   }
   return interpretate(in);
 }
-  
-
-
