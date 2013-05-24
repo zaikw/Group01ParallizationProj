@@ -4,7 +4,7 @@
 
 DEBUG ?=y
 
-CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -w
+CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -w	
 LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
@@ -24,7 +24,7 @@ endif
 all: 	interpreter
 
 test:	all $(SRC)/CU_interpreter.c
-	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c $(SRC)/parser.tab.c $(SRC)/structures.c $(SRC)/lex.yy.c -o $(BUILD)/CU_interpreter
+	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c $(SRC)/parser.tab.c $(SRC)/structures.c $(SRC)/lex.yy.c -o $(BUILD)/CU_interpreter -lcunit
 	$(BUILD)/CU_interpreter
 	$(BUILD)/interpreter -f $(TEST)/master_suite
 

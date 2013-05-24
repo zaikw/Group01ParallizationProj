@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-extern char* strdup(const char*);
-extern FILE* yyin;
+  extern char* strdup(const char*);
+  extern FILE* yyin;
+  FILE* debugout;
 
 }
 
@@ -13,10 +14,10 @@ extern FILE* yyin;
 #include <stdio.h>
 #include "structures.h"
 #include "parser.h"
-#define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
+#define DPRINT(...) if (debugout) {fprintf(debugout,__VA_ARGS__);}
 
 extern FILE* yyin;
-extern FILE* debug; 
+FILE* debugout; 
 
 SymbolIdent* it = NULL;
   
@@ -33,6 +34,7 @@ int yywrap()
 } 
 
 SymbolIdent* parse(FILE* inStream, FILE* debugStream) {
+  debugout = debugStream;
   if (inStream != NULL)
     yyin = inStream;
   if (!yyparse())
