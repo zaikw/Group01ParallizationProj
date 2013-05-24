@@ -14,7 +14,7 @@ fun merge(a,b) = if length(a)>0 then
 		       a
 		 else
 		    b;
-
 fun mergesortacc(a,b) = merge(mergesort(a),mergesort(b));
 fun mergesortcarry(a) = mergesortacc(hd(a),hd(tl(a)));
 fun mergesort(a) = if length(a)<2 then a else mergesortcarry(split(a));
+fun createalist(x) = if x>0 then cons(x,createalist(x-1)) else [];

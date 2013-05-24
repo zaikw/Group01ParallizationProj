@@ -16,6 +16,7 @@ char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", 
 int DEF_NUM = 12;
 
 map_t symbolmap;
+
 FILE* debug = NULL;
 
 typedef struct {
@@ -35,7 +36,8 @@ typedef struct {
   Val* returnVal;
 } ForkArgs;
 
-pthread_t checkFork(ForkArgs*);
+int checkFork(ForkArgs*);
+pthread_t doFork(ForkArgs*);
 
 void valPrint(Val curr) {
   switch (getType(curr)) {
@@ -63,22 +65,27 @@ void valPrint(Val curr) {
 }
 
 Val evalPlus(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a plus operation\n", pthread_self());
   return createVal(ValueType_INT, getIntVal(arg1)+getIntVal(arg2));
 }
 
 Val evalMinus(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a minus operation\n", pthread_self());
   return createVal(ValueType_INT, getIntVal(arg1)-getIntVal(arg2));
 }
 
 Val evalDiv(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a division operation\n", pthread_self());
   return createVal(ValueType_INT, getIntVal(arg1)/getIntVal(arg2));
 }
 
 Val evalMult(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a multiplication operation\n", pthread_self());
   return createVal(ValueType_INT, getIntVal(arg1)*getIntVal(arg2));
 }
 
 Val evalEqual(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a equality operation\n", pthread_self());
   if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
     return createVal(ValueType_INT, getCharVal(arg1) == getCharVal(arg2));
   }
@@ -91,18 +98,22 @@ Val evalEqual(Val arg1, Val arg2) {
 }
 
 Val evalHead(Val arg) {
+  DPRINT("%ld: executing a header operation\n", pthread_self());
   return getListVal(arg)->value;
 }
 
 Val evalTail(Val arg) {
+  DPRINT("%ld: executing a tail operation\n", pthread_self());
   return createVal(ValueType_LIST, (intptr_t) getListVal(arg)->next);
 }
 
 Val evalLength(Val arg) {
+  DPRINT("%ld: executing a length operation\n", pthread_self());
   return createVal(ValueType_INT, getListLength(arg));
 }
 
 Val evalCons(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a consbox operation\n", pthread_self());
   ValList* newNode = malloc(sizeof(ValList));
   newNode->value = arg1;
   newNode->next = getListVal(arg2);
@@ -111,6 +122,7 @@ Val evalCons(Val arg1, Val arg2) {
 
 
 Val evalLesser(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a less-than operation\n", pthread_self());
   if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
     return createVal(ValueType_INT, (getIntVal(arg1) < getIntVal(arg2)));
   }
@@ -123,6 +135,7 @@ Val evalLesser(Val arg1, Val arg2) {
 }
 
 Val evalGreater(Val arg1, Val arg2) {
+  DPRINT("%ld: executing a greater-than operation\n", pthread_self());
   if(getType(arg1) == ValueType_INT && getType(arg2) == ValueType_INT){
     return createVal(ValueType_INT, (getIntVal(arg1) > getIntVal(arg2)));
   }
@@ -143,7 +156,7 @@ int exists(const char* str) {
 }
 
 Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
-  DPRINT("%ld: entering eval\n", pthread_self());
+  DPRINT("%ld: evaluating a node\n",pthread_self());
   switch (getType(curr->value)) {
   case ValueType_CONSTANT:
     for (int k=0; k < argNum; k++) {
@@ -161,24 +174,36 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
       else
 	return seqEval(getArgNode(curr,2),args,argNum);
     } else if (!strcmp(getCharVal(curr->value),"time")) {
+      DPRINT("%ld: executing a timing operation", pthread_self());
       struct timespec tstart={0,0}, tend={0,0};
       clock_gettime(CLOCK_MONOTONIC, &tstart);
       seqEval(getArgNode(curr,0), args, argNum);      
       clock_gettime(CLOCK_MONOTONIC, &tend);
       return createVal(ValueType_INT, (intptr_t) (((double)tend.tv_sec + 1.0e-9*tend.tv_nsec)-((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec)));
     } else { //Execute arguments
+      DPRINT("%ld: executing arguments (if any)\n", pthread_self());
       int i = 0;
       PointerListNode* temp = curr->argList;
       while (temp) {temp = temp->next; i++;}
       ThreadTuple* argList = malloc(sizeof(ThreadTuple)*i);
       ForkArgs forkArgs[i];
       temp = curr->argList;
+      int ignore = 1;
       for (int j = 0; j < i; j++) {
 	forkArgs[j].target = temp->target;
 	forkArgs[j].args = args;
 	forkArgs[j].num = argNum;
 	forkArgs[j].returnVal = &(argList[j].value);
-	argList[j].id = checkFork(&(forkArgs[j]));
+	if (checkFork(&(forkArgs[j]))) {
+	  if (ignore) {
+	    ignore = 0;
+	    argList[j].id = 0;
+	  }
+	  else
+	    argList[j].id = doFork(&(forkArgs[j]));
+	}
+	else
+	  argList[j].id = 0;
 	temp = temp->next;
       }
       temp = curr->argList;
@@ -260,21 +285,28 @@ Val seqEval(TreeNode* curr, ArgName args[], int argNum) {
 void* prepSeqEval(void* arguments) {
   ForkArgs* args = (ForkArgs*) arguments;
   *(args->returnVal) = seqEval(args->target, args->args, args-> num);
+  DPRINT("%ld: Finished working on tree %ld\n",pthread_self(), args->target);
   NUM_THREADS--;
   return 0;
 }
 
-pthread_t checkFork(ForkArgs* args)
+
+pthread_t doFork(ForkArgs* args) {
+  pthread_t tid;
+  pthread_create(&tid, NULL, prepSeqEval, args);
+  DPRINT("%ld: Created thread %ld working on tree %ld\n", pthread_self(), tid, args->target);
+  NUM_THREADS++;
+  return tid;
+}
+
+int checkFork(ForkArgs* args)
 {
-  pthread_t tid = 0;
   if (NUM_THREADS < MAX_THREADS && getType(args->target->value) == ValueType_FUNCTION) {
     if (!exists(args->target->value.value.identifier)) {
-      pthread_create(&tid, NULL, prepSeqEval, args);
-      DPRINT("%ld: Created thread %ld\n", pthread_self(), tid);
-      NUM_THREADS++;
+      return 1;
     }
   }
-  return tid; 
+  return 0; 
 }
 
 int interpretate (FILE* in) {
@@ -291,8 +323,8 @@ int interpretate (FILE* in) {
     else if(it){
       if(it->name){
 	if(exists(it->name) || 
-	   hashmap_get(symbolmap, it->name, &olololo) == MAP_OK){
-	  printf("redefinition is not allowed");
+	   hashmap_get(symbolmap, it->name, &olololo) == MAP_OK) {
+	  printf("redefinition is not allowed\n");
 	}
 	else {
 	  if (it->argNames) {
