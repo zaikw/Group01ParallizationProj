@@ -56,5 +56,11 @@ char* getCharVal(Val v);
 ValList* getListVal (Val v);
 int getListLength(Val v);
 int getListsEqual(Val arg1, Val arg2);
+void freeSymbol(SymbolIdent*);
+void freeTree(TreeNode*);
+void freePointerList(PointerListNode*);
+void freeNameList(NameListNode*);
+void freeValList(ValList*);
+void freeVal(Val v);
 
 #endif

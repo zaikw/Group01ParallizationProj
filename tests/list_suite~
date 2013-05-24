@@ -1,0 +1,3 @@
+fun reverseacc(a,b) = if length(a)>0 then reverseacc(tl(a),cons(a,b)) else b;
+fun reverse(a) = reverseacc(a,[]);
+fun append(a,b) = reverseacc(reverse(a),b);

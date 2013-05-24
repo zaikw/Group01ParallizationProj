@@ -1,5 +1,6 @@
 #include "structures.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 ValueType getType (Val v) {
   switch (v.type) {
@@ -92,4 +93,56 @@ Val createVal(ValueType type, intptr_t value) {
   }
   returnVal.value.intval = value;
   return returnVal;
+}
+
+void freeVal(Val target) {
+  //if (getType(target) == ValueType_LIST)
+    //freeValList(target.value.listStart);
+  if (getType(target) == ValueType_CONSTANT ||
+      getType(target) == ValueType_FUNCTION)
+    if (target.value.identifier)
+      free(target.value.identifier);
+}
+
+void freeValList(ValList* target) {
+  if (target) {
+    freeVal(target->value);
+    freeValList(target->next);
+    free(target);
+  }
+}
+
+void freeNameList(NameListNode* target) {
+  if (target) {
+    if (target->name)
+      free(target->name);
+    freeNameList(target->next);
+    free(target);
+  }
+}
+
+void freePointerList(PointerListNode* target) {
+  if (target) {
+    freeTree(target->target);
+    freePointerList(target->next);
+    free(target);
+  }
+}
+
+void freeTree(TreeNode* target) {
+  if (target) {
+    freePointerList(target->argList);
+    freeVal(target->value);
+    free(target);
+  }
+}
+
+void freeSymbol(SymbolIdent* target) {
+  if (target) {
+    if (target->name)
+      free(target->name);
+    freeNameList(target->argNames);
+    freeTree(target->parseTree);
+    free(target);
+  }
 }
