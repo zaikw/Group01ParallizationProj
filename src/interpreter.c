@@ -282,6 +282,7 @@ int interpretate (FILE* in) {
   void* olololo;
   while(1){
     it = parse(in, debug);
+    in = NULL;
     if (it == 5) {
       if (debug != stdin)
 	fclose(debug);

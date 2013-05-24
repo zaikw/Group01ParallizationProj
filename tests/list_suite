@@ -1,0 +1,6 @@
+fun reverseacc(a,b) = if length(a)>0 then reverseacc(tl(a),cons(hd(a),b)) else b;
+fun reverse(a) = reverseacc(a,[]);
+fun append(a,b) = reverseacc(reverse(a),b);
+fun increment(a) = if length(a)>0 then cons(hd(a)+1,increment(tl(a))) else [];
+fun splitacc(a,b) = if length(b)>length(a) then cons(a,cons(b,[])) else splitacc(tl(a),cons(hd(a),b));
+fun split(a) = splitacc(a,[]);
