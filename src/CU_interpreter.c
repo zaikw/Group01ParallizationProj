@@ -23,19 +23,23 @@ int clean_Basic(void)
    }
 }
 
-void testADD(void)
+void testVAL(void)
 {
-   int i1 = 10;
-
-   if (NULL != temp_file) {
-      CU_ASSERT();
-   }
+  FILE * in;
+  in = fopen("./testULTIMATE", "r");
+  SymbolIdent* it = parse(in, NULL);
+  CU_ASSERT(!strcmp(it->name, "sumlist")); //name of function
+  CU_ASSERT(!strcmp(it->argnames->name, "x")); //name of arg to function
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->value), "ite")); // name of first expression in function
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->target->value), "length")); // name of first expression in if-then-else
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->target->argList->target->value), "x"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->value), "plus"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->argList->target->value), "hd"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->argList->target->argList->value), "x"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->argList->next->target->value), "sumlist"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->argList->next->target->argList->target->value), "tl"));
+  CU_ASSERT(!strcmp(getCharVal(it->parseeTree->argList->next->target->argList->next->target->argList->target->argList->target->value), "x"));
 }
-
-void testSUB(void)
-{
-}
-
 int main()
 {
    CU_pSuite pSuite = NULL;
@@ -53,8 +57,7 @@ int main()
 
    /* add the tests to the suite */
    /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
-   if ((NULL == CU_add_test(pSuite, "test of add", testADD)) ||
-       (NULL == CU_add_test(pSuite, "test of sub", testSUB)))
+   if ((NULL == CU_add_test(pSuite, "test of sub", testSUB)))
    {
       CU_cleanup_registry();
       return CU_get_error();
