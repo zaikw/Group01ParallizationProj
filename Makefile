@@ -8,7 +8,7 @@ CFLAGS=-pthread -std=c99 -D_XOPEN_SOURCE=600 -w
 LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
-ETST=./tests
+TEST=./tests
 
 
 CC=gcc
@@ -23,7 +23,9 @@ endif
 
 all: 	interpreter
 
-test:	all
+test:	all $(SRC)/CU_interpreter.c
+	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c -o $(BUILD)/CU_interpreter
+	$(BUILD)/CU_interpreter
 	$(BUILD)/interpreter -f $(TEST)/master_suite
 
 run: 	all
