@@ -24,12 +24,14 @@ endif
 all: 	interpreter
 
 test:	all $(SRC)/CU_interpreter.c
-	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c -o $(BUILD)/CU_interpreter
+	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c $(SRC)/parser.tab.c $(SRC)/structures.c $(SRC)/lex.yy.c -o $(BUILD)/CU_interpreter
 	$(BUILD)/CU_interpreter
 	$(BUILD)/interpreter -f $(TEST)/master_suite
 
 run: 	all
 	$(BUILD)/interpreter
+debugmode: all
+	$(BUILD)/interpreter -d
 
 debug:	all
 	gdb $(BUILD)/interpreter
