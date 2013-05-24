@@ -1,0 +1,1 @@
+fun sumlist(x) = if length(x) then hd(x) + sumlist(tl(x)) else 0;
