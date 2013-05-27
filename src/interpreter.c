@@ -1,3 +1,10 @@
+/**
+ * @brief: This is the file containing the main execution function, and the associated assisting functions to run the interpreter loop
+ * @file: interpreter.c
+ * @author: Jonatan Waern, Daniel Engh, Adam Olevall, Mikael Holmberg
+ * @date: 27/6 2013
+ */
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,10 +16,11 @@
 #include <time.h>
 
 #define DPRINT(...) if (debug) {fprintf(debug,__VA_ARGS__);}
-int MAX_THREADS = 10; //* Maximum amount of threads*/
-int NUM_THREADS = 0; //* Current number of threads*/
 
-char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"}; /** These are the names of all the built-in functions, the array is used to make sure no redefinitions occur*/
+int MAX_THREADS = 10;/** Maximum number of threads */
+int NUM_THREADS = 0; /** Current number of threads */
+
+char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"}; /** These are the names of all the built-in functions, the array is used to make sure no redefinitions occur */
 int DEF_NUM = 12; /** The number of built-in functions (usefull for iteration)*/
 
 map_t symbolmap; /** This hashmap stores all user-defined functions and symbols*/

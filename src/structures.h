@@ -1,3 +1,11 @@
+/**
+ * @brief: This is the main header file, containing definitions for structures and the functions that manipulate these structures.
+ * @file: structures.h
+ * @author: Jonatan Waern
+ * @date: 27/6 2013
+ */
+
+
 #ifndef STRUCTURE_HEADER
 #define STRUCTURE_HEADER
 #include <stdint.h>
