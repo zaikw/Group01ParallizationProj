@@ -16,7 +16,6 @@ char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", 
 int DEF_NUM = 12;
 
 map_t symbolmap;
-
 FILE* debug = NULL;
 
 typedef struct {

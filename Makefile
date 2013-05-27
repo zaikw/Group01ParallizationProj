@@ -9,7 +9,7 @@ LDFLAGS=-pthread -lrt
 SRC=./src
 BUILD=./build
 TEST=./tests
-
+DOC=./doc
 
 CC=gcc
 
@@ -22,6 +22,9 @@ else
 endif
 
 all: 	interpreter
+
+doc:	$(SRC)/interpreter.c $(SRC)/structures.c $(SRC)/structures.h
+	doxygen Doxyfile
 
 test:	all $(SRC)/CU_interpreter.c
 	$(CC) $(CFLAGS) $(SRC)/CU_interpreter.c $(SRC)/parser.tab.c $(SRC)/structures.c $(SRC)/lex.yy.c -o $(BUILD)/CU_interpreter -lcunit
@@ -45,7 +48,8 @@ parser: $(SRC)/tokenizer.l $(SRC)/parser.y $(SRC)/structures.h $(SRC)/structures
 
 clean:
 	ls $(BUILD)/ | grep -v "\." | (cd $(BUILD); xargs $(RM)) 
-	$(RM) $(BUILD)/* $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~
+	$(RM) $(BUILD)/* $(BUILD)/*.o $(BUILD)/*.d $(SRC)/*~ $(TEST)/*~
 	$(RM) $(SRC)/parser.tab.h $(SRC)/parser.tab.c $(SRC)/lex.yy.c
+	$(RM) -r $(DOC)/html $(DOC)/latex
 
 -include $(wildcard *.d)		
