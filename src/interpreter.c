@@ -20,7 +20,7 @@
 int MAX_THREADS = 10;/** Maximum number of threads */
 int NUM_THREADS = 0; /** Current number of threads */
 
-char* DEF_FUN[] = {"plus","minus","mult", "div", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"}; /** These are the names of all the built-in functions, the array is used to make sure no redefinitions occur */
+char* DEF_FUN[] = {"plus","minus","mult", "divide", "equals", "greater", "lesser", "hd", "tl", "cons", "length", "time"}; /** These are the names of all the built-in functions, the array is used to make sure no redefinitions occur */
 int DEF_NUM = 12; /** The number of built-in functions (usefull for iteration)*/
 
 map_t symbolmap; /** This hashmap stores all user-defined functions and symbols*/
@@ -287,7 +287,7 @@ Val eval(TreeNode* curr, ArgName args[], int argNum) {
       } else if (!strcmp(getCharVal(curr->value),"mult")) {
 	free(argList);
 	return evalMult(argList[0].value,argList[1].value);
-      } else if (!strcmp(getCharVal(curr->value),"div")) {
+      } else if (!strcmp(getCharVal(curr->value),"divide")) {
 	free(argList);
 	return evalDiv(argList[0].value,argList[1].value);
       } else if (!strcmp(getCharVal(curr->value),"equals")) {
