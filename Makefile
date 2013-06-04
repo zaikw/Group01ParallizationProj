@@ -23,6 +23,9 @@ endif
 
 all: 	interpreter
 
+demo:	all
+	$(BUILD)/interpreter -f $(SRC)/demo
+
 doc:	$(SRC)/interpreter.c $(SRC)/structures.c $(SRC)/structures.h
 	doxygen Doxyfile
 
@@ -33,6 +36,7 @@ test:	all $(SRC)/CU_interpreter.c
 
 run: 	all
 	$(BUILD)/interpreter
+
 debugmode: all
 	$(BUILD)/interpreter -d
 
