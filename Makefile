@@ -26,7 +26,7 @@ all: 	interpreter
 demo:	all
 	$(BUILD)/interpreter -f $(SRC)/demo
 
-doc:	$(SRC)/interpreter.c $(SRC)/structures.c $(SRC)/structures.h
+doc:	clean
 	doxygen Doxyfile
 
 test:	all $(SRC)/CU_interpreter.c

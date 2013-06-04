@@ -88,6 +88,37 @@ void valPrint(Val curr) {
 }
 
 /**
+ * Prints a value to the debugstream, if any.
+ * Prints a value to the debugstream, lists are printed as [node1,node2...nodeN], where a node can recursively be another list. If the debugstream is not defined, doesn not print
+ */
+void dValPrint(Val curr) {
+  if (debug) {
+    switch (getType(curr)) {
+    case ValueType_INT:
+      fprintf(debug,"%ld",getIntVal(curr));
+      break;
+    case ValueType_LIST:
+      fprintf(debug,"[");
+      ValList* tempNode = getListVal(curr);
+      while (tempNode) {
+	dValPrint(tempNode->value);
+	if (tempNode->next)
+	  fprintf(debug,",");
+	tempNode = tempNode->next;
+      }
+      fprintf(debug,"]");
+      break;
+    case ValueType_CONSTANT:
+      fprintf(debug,"NI");
+      break;
+    case ValueType_FUNCTION:
+      fprintf(debug,"NI");
+      break;
+    }
+  }
+}
+
+/**
  * Evaluates a addition operation between two vals
  * @return: a val with value equal to the sum of the arguments
  */
@@ -219,7 +250,7 @@ Val eval(TreeNode* curr, ArgName args[], int argNum) {
   case ValueType_CONSTANT:
     for (int k=0; k < argNum; k++) {
       if (!strcmp(getCharVal(curr->value),args[k].ident)) {
-	DPRINT("%ld: evaluated a symbol from arguments\n", pthread_self());
+	DPRINT("%ld: evaluated %s from arguments\n", pthread_self(), getCharVal(curr->value));
 	return args[k].value;
       }
     }
@@ -335,7 +366,9 @@ Val eval(TreeNode* curr, ArgName args[], int argNum) {
     }
   case ValueType_INT:
   case ValueType_LIST:
-    DPRINT("%ld: evaluated a constant value\n", pthread_self());
+    DPRINT("%ld: evaluated constant value ", pthread_self());
+    dValPrint(curr->value);
+    DPRINT("\n");
     return curr->value;
   }
 }
